@@ -1,0 +1,7 @@
+    PyPDF2
+    python-docx
+    spacy
+    transformers
+    torch
+    pytesseract
+    streamlit
