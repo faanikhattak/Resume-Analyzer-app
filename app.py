@@ -68,8 +68,74 @@ def analyze_resumes(resumes, job_description):
 
 # Streamlit app
 
+
+import os
+import streamlit as st
+from datetime import datetime
+import docx2txt
+
+def read_docx(file):
+    # Read text from a DOCX file
+    return docx2txt.process(file)
+
+def analyze_resumes(resumes, job_description):
+    # Placeholder function to analyze resumes against the job description
+    # Implement this function to analyze and rank resumes
+    return [resume['name'] for resume in resumes][:5]
+
+def read_resume_files(folder_path):
+    # Placeholder function to read resumes from a folder
+    # Implement this function to read and extract text from resume files in a folder
+    return [
+        {"name": "Sample Resume", "resume_text": "Sample resume text from folder", "contact": "1234567890", "address": "123 Sample St"}
+    ]
+
+def store_input_data(job_description, folder_path, uploaded_files):
+    # Create a folder to store input data if it doesn't exist
+    storage_folder = "input_data"
+    if not os.path.exists(storage_folder):
+        os.makedirs(storage_folder)
+    
+    # Store job description
+    with open(os.path.join(storage_folder, "job_description.txt"), "w") as f:
+        f.write(job_description)
+    
+    # Store folder path
+    with open(os.path.join(storage_folder, "folder_path.txt"), "w") as f:
+        f.write(folder_path)
+    
+    # Store uploaded files and extract candidate details
+    candidate_details = []
+    if uploaded_files:
+        resumes_folder = os.path.join(storage_folder, "resumes")
+        if not os.path.exists(resumes_folder):
+            os.makedirs(resumes_folder)
+        
+        for file in uploaded_files:
+            file_path = os.path.join(resumes_folder, file.name)
+            with open(file_path, "wb") as f:
+                f.write(file.getbuffer())
+            resume_text = read_docx(file)
+            # Placeholder for extracting candidate details from resume
+            candidate_name = file.name.split('.')[0]  # Assuming the file name is the candidate's name
+            candidate_contact = "Unknown"  # Placeholder for contact extraction logic
+            candidate_address = "Unknown"  # Placeholder for address extraction logic
+            candidate_details.append({
+                "name": candidate_name,
+                "contact": candidate_contact,
+                "address": candidate_address,
+                "resume_text": resume_text
+            })
+    
+    # Store candidate details
+    with open(os.path.join(storage_folder, "candidate_details.txt"), "w") as f:
+        for detail in candidate_details:
+            f.write(f"Name: {detail['name']}, Contact: {detail['contact']}, Address: {detail['address']}\n")
+    
+    return candidate_details
+
 def main():
-    st.set_page_config(page_title="Automated Resume Review System", page_icon=":memo:", layout="centered")
+    st.set_page_config(page_title="Automated Resume Review System", page_icon=":memo:", layout="wide")
 
     # Embedded CSS for styling
     st.markdown(
@@ -92,15 +158,26 @@ def main():
         .stTextArea, .stTextInput, .stFileUploader, .stButton {
             margin-bottom: 20px;
         }
+        .separator {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .separator::before {
+            content: "or";
+            display: inline-block;
+            background: white;
+            padding: 0 10px;
+            color: #555;
+        }
         </style>
         """, 
         unsafe_allow_html=True
     )
     
-    st.markdown('<header>Automated Resume Review System: Resume Analyzer</header>', unsafe_allow_html=True)
-    
+    st.markdown('<header>Welcome to the Automated Resume Review System</header>', unsafe_allow_html=True)
+    st.markdown("## Resume Analyzer")
     st.markdown("#### Developed by Irfan Khattak")
-    st.write("Welcome to the Automated Resume Review System. Please provide the necessary details below to analyze resumes.")
+    st.write("Please provide the necessary details below to analyze resumes.")
     
     with st.form(key='resume_form'):
         # Job description input
@@ -110,7 +187,7 @@ def main():
         folder_path = st.text_input("Enter the folder path for resumes:", value=r'C:\Users\irfan\Resumes')
 
         # Separator with "or"
-        st.markdown('<div class="separator">or</div>', unsafe_allow_html=True)
+        st.markdown('<div class="separator"></div>', unsafe_allow_html=True)
 
         # File uploader for resumes
         uploaded_files = st.file_uploader("Upload resumes:", accept_multiple_files=True)
@@ -119,9 +196,10 @@ def main():
         submit_button = st.form_submit_button(label="Analyze Resumes")
     
     if submit_button:
+        candidate_details = store_input_data(job_description, folder_path, uploaded_files)
         if uploaded_files:
             with st.spinner("Reading and analyzing resumes..."):
-                resumes = [{"name": file.name, "resume_text": read_docx(file)} for file in uploaded_files]
+                resumes = [{"name": detail['name'], "resume_text": detail['resume_text'], "contact": detail['contact'], "address": detail['address']} for detail in candidate_details]
                 top_candidates = analyze_resumes(resumes, job_description)
                 st.success("Analysis complete!")
                 st.subheader("Top candidates for the job:")
