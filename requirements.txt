@@ -6,5 +6,4 @@
     torch
     pytesseract
     streamlit
-    sklearn
     scikit-learn
